@@ -48,6 +48,8 @@ public:
 		//return TGAColor(255, 255, 255, 255);
 	}
 
+int width = 800, height = 800;
+Vec3f lightDir = Vec3f(0.0f, 0.0f, -1.0f);
 
 };
 
@@ -57,6 +59,17 @@ public:
 int main(int argc, char** argv) {
 
 	TGAImage img(width, height, TGAImage::RGB);
+
+
+	//硬编码一个三个三角形
+	/*Vec2i t0[3] = { Vec2i(10, 70),   Vec2i(50, 160),  Vec2i(70, 80) };
+	Vec2i t1[3] = { Vec2i(180, 50),  Vec2i(150, 1),   Vec2i(70, 180) };
+	Vec2i t2[3] = { Vec2i(180, 150), Vec2i(120, 160), Vec2i(130, 180) };*/
+	//Vec2i pts[3] = { t0, t1, t2 };
+	// 绘制三角形
+	//triangle_barycentric(t0, img, RED);
+	//triangle_barycentric(t1, img, WHITE);
+	//triangle_barycentric(t2, img, GREEN);
 
 	//加载模型
 	std::string modelstr = "obj/african_head.obj";

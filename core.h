@@ -53,6 +53,14 @@ public:
 
 
 
+//class Shader {
+//private:
+//	mat4 Model;
+//	mat4 View;
+//	mat4 projection;
+//
+//
+//};
 
 
 #endif // !__CORE__
