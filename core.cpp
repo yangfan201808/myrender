@@ -167,24 +167,14 @@ void triangle_crossproduct() {}
 
 
 //实际计算机会用的算法：重心插值判断 ,其实这样单纯用中心插值来填充三角形实在有点大材小用，但是，我们获取到的重心坐标可不仅仅会用来判断点是否在三角形内
-Vec3f barycentric(Vec4f* pts, Vec2f P) {
-	Vec3f v1 = Vec3f(pts[1].x - pts[0].x, pts[2].x - pts[0].x, pts[0].x - P.x);
-	Vec3f v2 = Vec3f(pts[1].y - pts[0].y, pts[2].y - pts[0].y, pts[0].y - P.y);
-	Vec3f v = cross(v1, v2);
 	if (std::abs(v.z) < 1) return Vec3f(-1, 1, 1);
 	return Vec3f(1.0f - (v.x + v.y) / (float)v.z, v.x / (float)v.z, v.y / (float)v.z);
 }
 
-//重心法画三角形
-void triangle_barycentric(Vec4f* pts, std::vector<float>& zBuffer, TGAImage& image) {
 	//计算bounding box
 	Vec2i bbox_min = Vec2i(width - 1, height - 1);
 	Vec2i bbox_max = Vec2i(0, 0);
 	for (int i = 0; i < 3; i++) {
-		bbox_max.x = std::min((width - 1), std::max(bbox_max.x, (int)(pts[i].x + 0.5f)));
-		bbox_max.y = std::min((height - 1), std::max(bbox_max.y, (int)(pts[i].y + 0.5f)));
-		bbox_min.x = std::max(0, std::min(bbox_min.x, (int)(pts[i].x + 0.5f)));
-		bbox_min.y = std::max(0, std::min(bbox_min.y, (int)(pts[i].y + 0.5f)));
 		try {
 			if (bbox_min.x < 0 || bbox_min.x > width - 1 || bbox_min.y < 0 || bbox_min.y > height - 1 || bbox_max.x < 0 || bbox_max.x > width - 1 || bbox_max.y < 0 || bbox_max.y > height - 1) {
 				throw "bbox error!";
@@ -199,11 +189,9 @@ void triangle_barycentric(Vec4f* pts, std::vector<float>& zBuffer, TGAImage& ima
 	//遍历包围盒，判定在三角内的被着色
 	for (int i = bbox_min.x; i <= bbox_max.x; i++) {
 		for (int j = bbox_min.y; j <= bbox_max.y; j++) {
-			Vec3f baryc = barycentric(pts, Vec2f(i+0.5f, j+0.5f));
 			if (baryc.x >= 0 && baryc.y >= 0 && baryc.z >= 0) {
-				float depth = baryc.x * pts[0].z + baryc.y * pts[1].z + baryc.z * pts[2].z;
-				auto pixColor = currentShader->fragmentShader(baryc);
 				if (depth > zBuffer[i + j * width - 1]) {
+					auto pixColor = model.diffuse(pixeluv);
 					image.set(i, j, pixColor);
 					zBuffer[i + j * width - 1] = depth;
 				}
@@ -217,40 +205,19 @@ void triangle_barycentric(Vec4f* pts, std::vector<float>& zBuffer, TGAImage& ima
 //画一个模型
 void draw(TGAImage& img, std::vector<float>& zBuffer) {
 
+void draw(Model& model, TGAImage& img) {
+	std::vector<int> zBuffer(width * height, INT32_MIN);
+	mat4 modelM = mat4::identity();
+	mat4 viewM = transf::viewMatrix(camraPosition, Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 1.0f, 0.0f));
+	mat4 projectionM = transf::perspective(45.0, 1.0f, 1.0, 100);
+	auto transform_matrix = projectionM * viewM * modelM;
 	mat4 viewportM = transf::getViewPortM();
-	for (int i = 0; i < currentModel->nfaces(); i++) {
-		auto face = currentModel->face(i);
-		//Vec3f localspace_coord[3];
-		Vec4f clipspace_coord[3];
-		Vec4f screen_coord[3];
-		for (int j = 0; j < face.size(); j++) {
-			//顶点着色器：
-			clipspace_coord[j] = currentShader->vertexShader(i,j);
-		}
 
-		//执行裁剪
-		bool clip = false;
-		for (int i = 0; i < 3; i++) {
-			float w = clipspace_coord[i].w;
-			if (clipspace_coord[i].x < w || clipspace_coord[i].x > -w || clipspace_coord[i].y < w || clipspace_coord[i].y > -w || clipspace_coord[i].z < w || clipspace_coord[i].z > -w) {
-				clip = true;
 			}
-			screen_coord[i] = transf::getViewPortM() * Vec4f(clipspace_coord[i].x / clipspace_coord[i].w , clipspace_coord[i].y / clipspace_coord[i].w, clipspace_coord[i].z / clipspace_coord[i].w, 1.0f);
 		}
-		//绘制三角形
-		if (!clip) {
-			triangle_barycentric(screen_coord, zBuffer, img);
-		}
-	
-	}
-}
 
-void Shader::setModel(mat4& m)
-{
-	for (int i = 0; i < 4; i++) {
-		Model[i] = m[i];
-	}
-}
+
+		}
 
 void Shader::setView(mat4& v)
 {
@@ -264,7 +231,7 @@ void Shader::setProjection(mat4& p)
 	for (int i = 0; i < 4; i++) {
 		Projection[i] = p[i];
 	}
-}
+	}
 
 void Shader::setNormalMatrix(const mat3& nM)
 {
