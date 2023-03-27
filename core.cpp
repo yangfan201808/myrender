@@ -175,10 +175,7 @@ Vec3f barycentric(Vec4f* pts, Vec2f P) {
 	return Vec3f(1.0f - (v.x + v.y) / (float)v.z, v.x / (float)v.z, v.y / (float)v.z);
 }
 
-
-
-
-
+//重心法画三角形
 void triangle_barycentric(Vec4f* pts, std::vector<float>& zBuffer, TGAImage& image) {
 	//计算bounding box
 	Vec2i bbox_min = Vec2i(width - 1, height - 1);
@@ -217,7 +214,7 @@ void triangle_barycentric(Vec4f* pts, std::vector<float>& zBuffer, TGAImage& ima
 
 }
 
-
+//画一个模型
 void draw(TGAImage& img, std::vector<float>& zBuffer) {
 
 	mat4 viewportM = transf::getViewPortM();
